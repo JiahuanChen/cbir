@@ -1,0 +1,18 @@
+Part 1
+
+The adjustment is done in Windows10. I don't have mac and I tried to set up the environment on ASW and virtual machine, but there are too many prerequisites on both of them.
+
+As for the previous code,it seems that no matter what clusters numbers is set in the console, it is always 10, so I changed the code.
+
+I finished the VLAD part. I have some difficulty in understanding the ADC/PCA, so I didn't go on. But, in my understanding, this step is to decrease the dimensions, thus to improve the efficiency, while balancing the accuracy. And finally, similiar images will have similiar VLAD features, thus are identified.
+
+Also, I visualisation the VLAD in "visualisation.py"
+
+
+Part 2
+Finished the whole processing show in the paper.
+Usage: 1) train 2) vlad 3) rdcidx 4) query_vlad
+
+Since I change the vlad.pickle structure, the "visualisation.py" doesn't work for now.
+
+Need to delete the data, e.g. the .mdb file under "pq.idx/", bofore start.

@@ -1,0 +1,7 @@
+cbir/__init__.py
+cbir/bow.py
+cbir/utils.py
+cbir.egg-info/PKG-INFO
+cbir.egg-info/SOURCES.txt
+cbir.egg-info/dependency_links.txt
+cbir.egg-info/top_level.txt

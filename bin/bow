@@ -1,0 +1,188 @@
+#!/usr/bin/env python3
+
+'''
+Command Line Interface for the BowEngine class
+'''
+import sys
+sys.path.append('E:/binded/challenge/cbir-challenge-jiahuanchen')
+from cbir.bow import BoWEngine
+import cv2
+import time
+import argparse
+import os
+import glob
+import json
+import numpy
+
+
+parser = argparse.ArgumentParser(
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter
+)
+
+subparser = parser.add_subparsers(dest='command')
+
+train_parser = subparser.add_parser('train')
+train_parser.add_argument(
+    'path',
+    nargs='?',
+    help='path to directory of images to use for training',
+    default='./images/flickr1k',
+    type=str,
+    metavar='path',
+)
+train_parser.add_argument(
+    '-l', '--limit',
+    help='limit the # of images to use for training',
+    default=1000,
+    type=int,
+    metavar='limit',
+)
+train_parser.add_argument(
+    '-k', '--clusters',
+    help='size of dictionary (number of words)',
+    default=1000,
+    type=int,
+)
+
+vlad_parser = subparser.add_parser('vlad')
+vlad_parser.add_argument(
+    'path',
+    nargs='?',
+    help='path to generate VLAD',
+    default='./images/flickr1k',
+    type=str,
+    metavar='path',
+)
+vlad_parser.add_argument(
+    '-l', '--limit',
+    help='limit the # of images to use for VLAD',
+    default=1000,
+    type=int,
+    metavar='limit',
+)
+
+rdcidx_parser = subparser.add_parser('rdcidx')
+rdcidx_parser.add_argument(
+    '-m','--subvectors',
+    help='#of subvectors',
+    default=4,
+    type=int,
+)
+rdcidx_parser.add_argument(
+    '-k','--clusters',
+    help='#of centroids, power of 2',
+    default=64,
+    type=int,
+)
+
+
+query_vlad_parser = subparser.add_parser('query_vlad')
+query_vlad_parser.add_argument(
+    'path',
+    nargs='?',
+    help='path to image to search',
+    default='./images/lenna/lenna.jpg',
+    type=str,
+    metavar='path',
+)
+
+index_parser = subparser.add_parser('index')
+index_parser.add_argument(
+    '-l', '--limit',
+    help='limit the # of images to index',
+    default=None,
+    type=int,
+    metavar='limit',
+)
+index_parser.add_argument(
+    'path',
+    nargs='?',  # optional positional argument
+    help='path to directory you want to index',
+    default='./images/flickr1k',
+    type=str,
+    metavar='path',
+)
+
+delete_index_parser = subparser.add_parser('delete_index')
+
+query_parser = subparser.add_parser('query')
+query_parser.add_argument(
+    'path',
+    nargs='?',
+    help='path to image to search',
+    default='./images/lenna/lenna.jpg',
+    type=str,
+    metavar='path',
+)
+
+args = parser.parse_args()
+
+engine = BoWEngine()
+
+def train():
+    start = time.time()
+    engine.train(clusters=args.clusters, limit=args.limit, path=args.path)
+    end = time.time()
+    print('Clustered in %.0fs' % (end - start))
+
+def vlad():
+    engine.cal_vlad(args.limit, args.path)
+
+def index_mapper(filename):
+    image = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+    image_id = filename
+    # for debugging
+    if filename == './images/lenna.jpg':
+        image_id = 0
+    res = engine.index(
+        image=image,
+        image_id=image_id,
+        filename=filename,
+    )
+    print('Indexed %s' % filename)
+    return res
+
+def rdcidx():
+    engine.rdcidx(args.subvectors)
+
+#print the index of 5nn
+def query_vlad():
+    result = engine.query_vlad(args.path)
+    print(result)
+
+def index():
+    glob_string = os.path.join(args.path, './*.jpg')
+    print('Indexing images in "%s"' % glob_string)
+    i = 0
+    for filepath in glob.iglob(glob_string):
+        i += 1
+        if (args.limit is not None and i > args.limit):
+            break
+        print('Indexing %s' % filepath)
+        engine.index(filepath)
+    engine.database.save_to_disk()
+
+
+def delete_index():
+    engine.delete_index()
+
+
+def query():
+    res = engine.query(args.path)
+    print(json.dumps(res, indent=4))
+
+
+def count():
+    print(engine.count())
+
+
+{
+    'train': train,
+    'vlad': vlad,
+    'rdcidx': rdcidx,
+    'query_vlad': query_vlad,
+    'index': index,
+    'query': query,
+    'delete_index': delete_index,
+    'count': count,
+}[args.command]()
